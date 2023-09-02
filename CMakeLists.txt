@@ -10,14 +10,6 @@ SET (XIGEN_VERSION_MINOR 0)
 
 SET (XIGEN_VERSION_PATCH 0) 
 
-IF(${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
-
-    # It is required to build a rpath framework
-
-    CMAKE_POLICY(SET CMP0042 NEW)
-
-ENDIF()
-
 
 
 # Detect correct C++11 flag
@@ -46,13 +38,6 @@ IF(NOT ${CMAKE_SYSTEM_NAME} STREQUAL Windows)
 
 ENDIF()
 
-#to build test and example in bin/folder and avoid ld errors
-
-IF (NOT MSVC)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
-
-ENDIF()  
-
 IF(${CMAKE_SYSTEM_NAME} STREQUAL Windows AND ${CMAKE_SYSTEM_VERSION} EQUAL 6.1)
 
     # HACK: Make cryptopp replace missing (till Windows 8) GetOverlappedResultEx() on Windows7 with somehting compatible
@@ -76,12 +61,12 @@ SET (SOURCES_STATIC
      src/generator.cc
      src/locale.cc
      src/xigen.cc
-    )
+)
 
-# Try to find BISON and FLEX
 
 if (NOT MSVC)
 
+    # Try to find BISON and FLEX
     find_package(BISON)
     find_package(FLEX)
 
@@ -98,27 +83,30 @@ if (NOT MSVC)
     )
 
     target_include_directories(xigen PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-    target_include_directories(xigen PRIVATE ${CMAKE_SOURCE_DIR}/src)
 else()
-    set_source_files_properties(${CMAKE_SOURCE_DIR}/src/parser.cc ${CMAKE_SOURCE_DIR}/src/scanner.cc
-                                PROPERTIES GENERATED TRUE)
     add_executable(xigen
                    ${SOURCES_STATIC}
                    ${CMAKE_SOURCE_DIR}/src/compat/getopt_long.c
                    ${CMAKE_SOURCE_DIR}/src/parser.cc
                    ${CMAKE_SOURCE_DIR}/src/scanner.cc
-                  )                            
-    target_include_directories(xigen PRIVATE ${CMAKE_SOURCE_DIR}/src)
+    )
     target_include_directories(xigen PRIVATE ${CMAKE_SOURCE_DIR}/src/compat)
-endif()
 
-if(MSVC)
-
-    target_compile_options(xigen PRIVATE /W3 /wd"4267" /wd"4244" /wd"4390" /wd"4800" /WX  /D"_CRT_SECURE_NO_WARNINGS" 
-                           /D"_CRT_SECURE_NO_DEPRECATE" /D"_CRT_NONSTDC_NO_DEPRECATE" /D"_USING_V110_SDK71_" /D"_UNICODE" /D"UNICODE" /errorReport:prompt)
+    # Generate pafser and scanner by direct invoking flex and bison
+    set_source_files_properties(${CMAKE_SOURCE_DIR}/src/parser.cc ${CMAKE_SOURCE_DIR}/src/scanner.cc
+                                PROPERTIES GENERATED TRUE)
     add_custom_command(TARGET xigen PRE_BUILD
                        COMMAND c:/cygwin/bin/bash.exe --login -c "cd  `cygpath %27${CMAKE_SOURCE_DIR}/src%27` && flex -i -+ -oscanner.cc scanner.ll && bison -y -d -v -ra -S lalr1.cc -o parser.cc parser.yy"
     )
+endif()
+
+target_include_directories(xigen PRIVATE ${CMAKE_SOURCE_DIR}/src)
+
+# Tune warnings
+if(MSVC)
+    target_compile_options(xigen PRIVATE /W3 /wd"4267" /wd"4244" /wd"4390" /wd"4800" /WX  /D"_CRT_SECURE_NO_WARNINGS" 
+                           /D"_CRT_SECURE_NO_DEPRECATE" /D"_CRT_NONSTDC_NO_DEPRECATE"
+                           /D"_USING_V110_SDK71_" /D"_UNICODE" /D"UNICODE" /errorReport:prompt)
 else()
     target_compile_options(xigen PRIVATE -Wno-deprecated-declarations -Wno-tautological-compare)
 endif()
