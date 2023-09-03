@@ -56,3 +56,5 @@ if(MSVC)
 else()
     target_compile_options(xigen PRIVATE -Wno-deprecated-declarations -Wno-tautological-compare)
 endif()
+
+install(TARGETS xigen DESTINATION bin)
