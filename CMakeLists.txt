@@ -6,7 +6,7 @@ PROJECT(xigen)
 
 SET (XIGEN_VERSION_MAJOR 1)
 SET (XIGEN_VERSION_MINOR 1)
-SET (XIGEN_VERSION_PATCH 1)
+SET (XIGEN_VERSION_PATCH 2)
 
 # Pass version as macro to xigen compilation
 
